@@ -9,23 +9,17 @@ from time import gmtime, strftime
 import copy
 import pprint
 import traceback
+import sys
 
 wdi_property_store.wd_properties['P3329'] = {
         'datatype': 'string',
         'name': 'CIViC Variant ID',
-        'domain': ['genes'],
+        'domain': ['variants'],
         'core_id': True
     }
 
 
-wdi_property_store.wd_properties['P31'] = {
-        'datatype': 'item',
-        'name': 'instance of',
-        'domain': ['therapy'],
-        'core_id': False
-    }
-
-# logincreds = wdi_login.WDLogin("ProteinBoxBot", os.environ['wikidataApi'])
+logincreds = wdi_login.WDLogin("ProteinBoxBot", os.environ['wikidataApi'])
 
 # chromosomes
 #Chromosomes dict
@@ -106,7 +100,7 @@ ignore_synonym_list = [
 
 # Reference section
 # Prepare references
-variant_id = "12"
+variant_id = "1"
 refStatedIn = wdi_core.WDItemID(value="Q27612411", prop_nr="P248", is_reference=True)
 timeStringNow = strftime("+%Y-%m-%dT00:00:00Z", gmtime())
 refRetrieved = wdi_core.WDTime(timeStringNow, prop_nr="P813", is_reference=True)
@@ -148,7 +142,7 @@ sparql.setQuery(ncbi_geneQuery)
 sparql.setReturnFormat(JSON)
 results = sparql.query().convert()
 for result in results["results"]["bindings"]:
-   prep['P3433'] = [wdi_core.WDItemID(value=result["item"]["value"].replace("http://www.wikidata.org/entity/", ""), prop_nr='P3433', references=[copy.deepcopy(variant_reference)])]
+   prep['P3433'] = [wdi_core.WDItemID(value=result["item"]["value"].replace("http://www.wikidata.org/entity/", ""), prop_nr="P3433", references=[copy.deepcopy(variant_reference)])]
    print("wd entrez:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
 
 # part of
@@ -163,21 +157,20 @@ prep["P3331"] = []
 for hgvs in variant_data["hgvs_expressions"]:
     prep["P3331"].append(wdi_core.WDString(value=hgvs, prop_nr="P3331", references=[copy.deepcopy(variant_reference)]))
 
-
 #coordinates
 coordinates = variant_data["coordinates"]
 if coordinates["chromosome"] != None:
-    prep['P1057'] = [wdi_core.WDItemID(value=chromosomes[coordinates["chromosome"]], prop_nr='P1057', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
+    prep['P1057'] = [wdi_core.WDItemID(value=chromosomes[coordinates["chromosome"]], prop_nr="P1057", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
     if coordinates["chromosome2"] != None:
-        prep['P1057'].append(wdi_core.WDItemID(value=chromosomes[coordinates["chromosome2"]], prop_nr='P1057', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
+        prep['P1057'].append(wdi_core.WDItemID(value=chromosomes[coordinates["chromosome2"]], prop_nr="P1057", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
 
     # genomic start
-    prep['P644'] = [wdi_core.WDString(value=str(coordinates["start"]), prop_nr='P644', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
-    prep['P645'] = [wdi_core.WDString(value=str(coordinates["stop"]), prop_nr='P645', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
+    prep['P644'] = [wdi_core.WDString(value=str(coordinates["start"]), prop_nr="P644", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
+    prep['P645'] = [wdi_core.WDString(value=str(coordinates["stop"]), prop_nr="P645", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier))]
 
     if coordinates["start2"] != None:
-        prep['P644'].append(wdi_core.WDString(value=str(coordinates["start2"]), prop_nr='P644', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
-        prep['P645'].append(wdi_core.WDString(value=str(coordinates["stop2"]), prop_nr='P645', references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
+        prep['P644'].append(wdi_core.WDString(value=str(coordinates["start2"]), prop_nr="P644", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
+        prep['P645'].append(wdi_core.WDString(value=str(coordinates["stop2"]), prop_nr="P645", references=[copy.deepcopy(variant_reference)], qualifiers=copy.deepcopy(genomeBuildQualifier)))
 
 query = """
         SELECT ?item ?itemLabel WHERE {
@@ -192,8 +185,8 @@ seqO = dict()
 for result in results["results"]["bindings"]:
     seqO[result["itemLabel"]["value"]] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
     if "alias" in result.keys():
-      if result["alias"]["value"] != "":
-        seqO[result["alias"]["value"]] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
+        if result["alias"]["value"] != "":
+            seqO[result["alias"]["value"]] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
     seqO[result["itemLabel"]["value"]] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
     print("wd disease:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
 
@@ -201,7 +194,8 @@ prep["P31"] = []
 for variant_type in variant_data["variant_types"]:
     if variant_type["name"] == "N/A":
         continue
-    prep["P31"].append(wdi_core.WDItemID(value=seqO[variant_type["display_name"]], prop_nr="P31", references=[copy.deepcopy(variant_reference)]))
+    prep["P31"].append(wdi_core.WDItemID(value=seqO[variant_type["display_name"]], prop_nr="P31",
+                                         references=[copy.deepcopy(variant_reference)]))
 
     print(variant_type["display_name"])
 
@@ -212,6 +206,8 @@ prep["P3357"] = []
 prep["P3358"] = []
 prep["P3359"] = []
 
+statements = []
+
 for evidence_item in variant_data["evidence_items"]:
     if evidence_item["status"] == "accepted" and evidence_item["rating"] != None:
         print(evidence_item["id"])
@@ -220,13 +216,15 @@ for evidence_item in variant_data["evidence_items"]:
             wdi_core.WDItemID(value=evidence_level[str(evidence_item["evidence_level"])], prop_nr="P459",
                               is_qualifier=True))
         evidence_qualifiers.append(
-            wdi_core.WDItemID(value=trustratings[str(evidence_item["rating"])], prop_nr="P1552", is_qualifier=True))
+            wdi_core.WDItemID(value=trustratings[str(evidence_item["rating"])], prop_nr="P4271", is_qualifier=True))
 
         evidence_references = []
-        evidence_references.append(wdi_core.WDItemID(value="Q27612411",prop_nr="P1640", is_reference=True))
+        evidence_references.append(wdi_core.WDItemID(value="Q27612411", prop_nr="P1640", is_reference=True))
         timeStringNow = strftime("+%Y-%m-%dT00:00:00Z", gmtime())
         evidence_references.append(wdi_core.WDTime(timeStringNow, prop_nr="P813", is_reference=True))
-        evidence_references.append(wdi_core.WDUrl("https://civic.genome.wustl.edu/links/evidence/"+str(evidence_item["id"]), prop_nr="P854", is_reference=True))
+        evidence_references.append(
+            wdi_core.WDUrl("https://civic.genome.wustl.edu/links/evidence/" + str(evidence_item["id"]), prop_nr="P854",
+                           is_reference=True))
 
         statement = dict()
         disease = None
@@ -247,7 +245,7 @@ for evidence_item in variant_data["evidence_items"]:
             results = sparql.query().convert()
             statement["disease_name"] = evidence_item["disease"]["name"]
             for result in results["results"]["bindings"]:
-                #print("wd disease:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
+                # print("wd disease:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
                 statement["wd_disease"] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
             print("=====")
         else:
@@ -265,26 +263,21 @@ for evidence_item in variant_data["evidence_items"]:
                 combination_therapy = " / ".join(drugs) + " combination therapy"
                 statement["drug_label"] = combination_therapy
                 query = "SELECT * WHERE { ?item wdt:P31 wd:Q1304270 ;"
-                query += "rdfs:label \""+combination_therapy+"\"@en . }"
+                query += "rdfs:label \"" + combination_therapy + "\"@en . }"
 
                 sparql.setQuery(query)
                 sparql.setReturnFormat(JSON)
                 results = sparql.query().convert()
-                if len(results["results"]["bindings"]) == 0:
-                    file.write('CREATE\n')
-                    file.write('LAST\tLen\t\"'+combination_therapy+"\"\n")
-                    file.write('LAST\tDen\t\"combination therapy\"\n')
-                    file.write('LAST\tP31\tQ1304270\n\n')
 
                 for result in results["results"]["bindings"]:
-                    # print(result["item"]["value"])
-                    # print("wd drug:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
                     statement["wd_drug"] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
-            else: # len(evidence_item["drugs"]) == 1
-                #pprint(evidence_item)
+            else:  # len(evidence_item["drugs"]) == 1
                 statement["drug_label"] = evidence_item["drugs"][0]["name"]
-                drug_query = "SELECT DISTINCT * WHERE { {{?item rdfs:label \""+evidence_item["drugs"][0]["name"]+"\"@en } UNION {?item skos:altLabel \""+evidence_item["drugs"][0]["name"]+"\"@en}}"
-                drug_query += "UNION {{?item rdfs:label \""+evidence_item["drugs"][0]["name"].lower()+"\"@en } UNION {?item skos:altLabel \""+evidence_item["drugs"][0]["name"].lower()+"\"@en}} ?item rdfs:label ?label . FILTER (lang(?label) = \"en\")}"
+                drug_query = "SELECT DISTINCT * WHERE { {{?item rdfs:label \"" + evidence_item["drugs"][0][
+                    "name"] + "\"@en } UNION {?item skos:altLabel \"" + evidence_item["drugs"][0]["name"] + "\"@en}}"
+                drug_query += "UNION {{?item rdfs:label \"" + evidence_item["drugs"][0][
+                    "name"].lower() + "\"@en } UNION {?item skos:altLabel \"" + evidence_item["drugs"][0][
+                                  "name"].lower() + "\"@en}} ?item rdfs:label ?label . FILTER (lang(?label) = \"en\")}"
                 # print(drug_query)
                 sparql.setQuery(drug_query)
                 sparql.setReturnFormat(JSON)
@@ -292,7 +285,7 @@ for evidence_item in variant_data["evidence_items"]:
                 for wd_drug in results["results"]["bindings"]:
                     if wd_drug["label"]["value"].lower() == evidence_item["drugs"][0]["name"].lower():
                         # print(wd_drug["item"]["value"])
-                        #print("wd drug:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
+                        # print("wd drug:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
                         statement["wd_drug"] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
 
         ## Pubmed
@@ -319,15 +312,17 @@ for evidence_item in variant_data["evidence_items"]:
             refDisputedBy = wdi_core.WDItemID(value=pubmed_entry, prop_nr="P1310", is_qualifier=True)
             evidence_references.append(refStatedIn)
 
-        print(statement)
-
         # Positive therapeutic predictor
-        if evidence_item["evidence_type"] == "Predictive" and evidence_item["clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
+        if evidence_item["evidence_type"] == "Predictive" and evidence_item[
+            "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
             temp_qualifier = [wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P2175", is_qualifier=True)]
             for qualifier in evidence_qualifiers:
                 temp_qualifier.append(qualifier)
             evidence_qualifiers = temp_qualifier
-            prep["P3354"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3354", references=[copy.deepcopy(evidence_references)], qualifiers=copy.deepcopy(evidence_qualifiers)))
+            pprint.pprint(statement)
+            prep["P3354"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3354",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Evidence does not support Positive therapeutic predictor
         if evidence_item["evidence_type"] == "Predictive" and evidence_item[
@@ -337,8 +332,9 @@ for evidence_item in variant_data["evidence_items"]:
             for qualifier in evidence_qualifiers:
                 temp_qualifier.append(qualifier)
             evidence_qualifiers = temp_qualifier
-            prep["P3354"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3354", references=[copy.deepcopy(evidence_references)], qualifiers=copy.deepcopy(evidence_qualifiers)))
-
+            prep["P3354"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3354",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
         # Negative therapeutic predictor
         if evidence_item["evidence_type"] == "Resistance or Non-Response" and evidence_item[
             "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
@@ -346,77 +342,90 @@ for evidence_item in variant_data["evidence_items"]:
             for qualifier in evidence_qualifiers:
                 temp_qualifier.append(qualifier)
             evidence_qualifiers = temp_qualifier
-            prep["P3355"].apeend(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3355", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            prep["P3355"].apeend(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3355",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Evidence does not support Negative therapeutic predictor
         if evidence_item["evidence_type"] == "Predictive" and evidence_item[
-            "clinical_significance"] == "Resistance or Non-Response" and evidence_item["evidence_direction"] == "Does Not Support":
+            "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
+            "evidence_direction"] == "Does Not Support":
             temp_qualifier = [wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P2175", is_qualifier=True)]
             temp_qualifier.append(refDisputedBy)
             for qualifier in evidence_qualifiers:
                 temp_qualifier.append(qualifier)
             evidence_qualifiers = temp_qualifier
-            prep["P3355"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3355", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
-
-
+            prep["P3355"].append(wdi_core.WDItemID(value=statement["wd_drug"], prop_nr="P3355",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
         # Positive diagnostic predictor
-        if evidence_item["evidence_type"] == "Diagnostic" and evidence_item["clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
-            prep["P3356"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3356", references=[copy.deepcopy(evidence_references)], qualifiers=evidence_qualifiers))
-
+        if evidence_item["evidence_type"] == "Diagnostic" and evidence_item[
+            "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
+            prep["P3356"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3356",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=evidence_qualifiers))
         # Evidence does not support Positive diagnostic predictor
         if evidence_item["evidence_type"] == "Diagnostic" and evidence_item[
             "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Does Not Support":
             evidence_qualifiers.append(refDisputedBy)
-            prep["P3356"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3356", references=[copy.deepcopy(evidence_references)], qualifiers=copy.deepcopy(evidence_qualifiers)))
-
+            prep["P3356"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3356",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
         # Negative diagnostic predictor
         if evidence_item["evidence_type"] == "Diagnostic" and evidence_item[
-            "clinical_significance"] == "Resistance or Non-Response" and evidence_item["evidence_direction"] == "Supports":
-            prep["P3357"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3357", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
+            "evidence_direction"] == "Supports":
+            prep["P3357"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3357",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Evidence does not support Negative diagnostic predictor
         if evidence_item["evidence_type"] == "Diagnostic" and evidence_item[
-            "clinical_significance"] == "Resistance or Non-Response" and evidence_item["evidence_direction"] == "Does Not Support":
+            "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
+            "evidence_direction"] == "Does Not Support":
             evidence_qualifiers.append(refDisputedBy)
-            prep["P3357"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3357", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            prep["P3357"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3357",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Positive prognostic predictor
         if evidence_item["evidence_type"] == "Prognositc" and evidence_item[
             "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Supports":
-            prep["P3358"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3358", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            prep["P3358"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3358",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Evidence does not support Positive prognostic predictor
         if evidence_item["evidence_type"] == "Prognositc" and evidence_item[
             "clinical_significance"] == "Sensitivity" and evidence_item["evidence_direction"] == "Does Not Support":
             evidence_qualifiers.append(refDisputedBy)
-            prep["P3358"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3358", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            prep["P3358"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3358",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Negative prognostic predictor
         if evidence_item["evidence_type"] == "Prognostic" and evidence_item[
-            "clinical_significance"] == "Resistance or Non-Response" and evidence_item["evidence_direction"] == "Supports":
-            prep["P3359"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3359", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
+            "evidence_direction"] == "Supports":
+            prep["P3359"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3359",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
 
         # Evidence does not support Negative prognostic predictor
         if evidence_item["evidence_type"] == "Prognostic" and evidence_item[
             "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
             "evidence_direction"] == "Does Not Support":
             evidence_qualifiers.append(refDisputedBy)
-            prep["P3359"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3359", references=[copy.deepcopy(evidence_references)],
-                                  qualifiers=copy.deepcopy(evidence_qualifiers)))
+            prep["P3359"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3359",
+                                                   references=[copy.deepcopy(evidence_references)],
+                                                   qualifiers=copy.deepcopy(evidence_qualifiers)))
+## =================================
 
 data2add = []
 for key in prep.keys():
     for statement in prep[key]:
         if len(prep[key]):
             data2add.append(statement)
-        print(statement.prop_nr, statement.value)
 
 name = variant_data["name"]
 wdPage = wdi_core.WDItemEngine(item_name=name, data=data2add, server="www.wikidata.org", domain="genes")
@@ -439,8 +448,8 @@ if len(variant_data["variant_aliases"]) > 0:
 if len(synonyms) > 0:
     wdPage.set_aliases(aliases=synonyms, lang='en', append=True)
 
-pprint(wdPage.get_wd_json_representation())
-# wdPage.write(logincreds)
+pprint.pprint(wdPage.get_wd_json_representation())
+wdPage.write(logincreds)
 
 
 file.close()
