@@ -100,7 +100,7 @@ ignore_synonym_list = [
 
 # Reference section
 # Prepare references
-variant_id = "1"
+variant_id = "12"
 refStatedIn = wdi_core.WDItemID(value="Q27612411", prop_nr="P248", is_reference=True)
 timeStringNow = strftime("+%Y-%m-%dT00:00:00Z", gmtime())
 refRetrieved = wdi_core.WDTime(timeStringNow, prop_nr="P813", is_reference=True)
@@ -286,7 +286,7 @@ for evidence_item in variant_data["evidence_items"]:
                     if wd_drug["label"]["value"].lower() == evidence_item["drugs"][0]["name"].lower():
                         # print(wd_drug["item"]["value"])
                         # print("wd drug:" + result["item"]["value"].replace("http://www.wikidata.org/entity/", ""))
-                        statement["wd_drug"] = result["item"]["value"].replace("http://www.wikidata.org/entity/", "")
+                        statement["wd_drug"] = wd_drug["item"]["value"].replace("http://www.wikidata.org/entity/", "")
 
         ## Pubmed
         print("PMID: " + evidence_item["source"]["pubmed_id"])
@@ -415,7 +415,6 @@ for evidence_item in variant_data["evidence_items"]:
         if evidence_item["evidence_type"] == "Prognostic" and evidence_item[
             "clinical_significance"] == "Resistance or Non-Response" and evidence_item[
             "evidence_direction"] == "Does Not Support":
-            evidence_qualifiers.append(refDisputedBy)
             prep["P3359"].append(wdi_core.WDItemID(value=statement["wd_disease"], prop_nr="P3359",
                                                    references=[copy.deepcopy(evidence_references)],
                                                    qualifiers=copy.deepcopy(evidence_qualifiers)))
